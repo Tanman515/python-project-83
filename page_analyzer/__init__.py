@@ -1,1 +1,1 @@
-from page_analyzer.app import *
+from page_analyzer import app
