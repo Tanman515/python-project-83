@@ -1,8 +1,14 @@
 install:
 	poetry install
 
+lint:
+	poetry run flake8
+
+test:
+	poetry run pytest
+
 dev:
-poetry run flask --app page_analyzer:app run
+	poetry run flask --app page_analyzer:app run
 
 PORT ?= 8000
 start:
