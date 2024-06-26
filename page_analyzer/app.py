@@ -9,5 +9,5 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 
 @app.route("/")
-def hello_world():
-    return "<p>Is this working?</p>"
+def default_page():
+    return render_template('index.html')
