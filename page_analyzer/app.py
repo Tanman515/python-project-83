@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, url_for, request
 from dotenv import load_dotenv
 import os
 
@@ -15,4 +15,6 @@ def index():
 
 @app.route("/urls", methods=["GET", "POST"])
 def urls():
+    if request.method == "POST":
+        request_url = request.form['url']
     return render_template('urls.html', title='Анализатор страниц')
