@@ -1,3 +1,2 @@
 .env
-.pytest_cache
 page_analyzer/__pycache__
