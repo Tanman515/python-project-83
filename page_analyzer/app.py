@@ -9,5 +9,10 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
 
 @app.route("/")
-def default_page():
-    return render_template('index.html')
+def index():
+    return render_template('index.html', title='Анализатор страниц')
+
+
+@app.route("/urls", methods=["GET", "POST"])
+def urls():
+    return render_template('urls.html', title='Анализатор страниц')
