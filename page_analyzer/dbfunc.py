@@ -8,7 +8,7 @@ def insert_into_db(DATABASE_URL, table_name, insert_data):
         conn = psycopg2.connect(DATABASE_URL)
         conn.autocommit = True
         with conn.cursor() as cursor:
-            columns= insert_data.keys()
+            columns = insert_data.keys()
             values = [insert_data[column] for column in columns]
             insert_statement = f'INSERT INTO {table_name} (%s) VALUES %s'
             cursor.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
