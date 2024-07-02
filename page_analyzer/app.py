@@ -30,12 +30,17 @@ def urls_id(id):
     # ЕСЛИ ЕСТЬ ОТПРАВЛЯЕМ HTML
     # В ПРОТИВНОМ СЛУЧАЕ ОШИБКУ 404
 
-    data = read_db(DATABASE_URL)
+    data = read_db(DATABASE_URL, 'urls')
     record = [line for line in data if line['id'] == int(id)]
     # ЕСЛИ ЗАПИСЬ СУЩЕСТВУЕТ ТО
     # ПЕРЕДАЁМ ДАННЫЕ И ВОЗВРАЩАЕМ ШАБЛОН
     if record:
-        return render_template('urls_id.html', id=id, url=record[0]['url'], created_at=record[0]['created_at'])
+
+        # ПРОВЕРЯЕМ ЕСТЬ ЛИ ЗАПИСИ О ПРОВЕРКАХ
+        data = read_db(DATABASE_URL, 'url_checks')
+        checks = [{key: value for key, value in check.items()} for check in data if check['url_id'] == record[0]['id']]
+
+        return render_template('urls_id.html', record=record[0], checks=checks)
 
     # В ПРОТИВНОМ СЛУЧАЕ ВОЗВАРАЩАЕМ ОШИБКУ 404 И PAGE_NOT_FOUND
     else:
@@ -48,25 +53,44 @@ def urls():
         request_url = request.form['url']
         # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА ВАЛИДНОСТЬ URL
         if check_url(request_url):
-            data = read_db(DATABASE_URL)
-            request_hostname = urlparse(request_url).hostname
-            urls = [urlparse(record['url']).hostname for record in data]
+            data = read_db(DATABASE_URL, 'urls')
+            parsed_url = urlparse(request_url)
+            current_url = f'{parsed_url.scheme}://{parsed_url.hostname}'
+            urls = [f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' for record in data]
             # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА НАЛИЧИЕ ДАННЫХ В БД
-            if request_hostname in urls:
+            if current_url in urls:
                 flash('Страница уже существует')
-                id = [record['id'] for record in data if urlparse(record['url']).hostname == request_hostname]
+                id = [record['id'] for record in data if f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' == current_url] # noqa E501
                 return redirect(url_for('urls_id', id=id[0]))
             else:
                 # ДОБАВЛЕНИЕ СТРАНИЦЫ В БД, ПЕРЕНАПРАВЛЕНИЕ НА ПУТЬ URLS/<ID>
                 created_at = str(date.today())
                 next_id = data[-1]['id'] + 1 if data else 1
-                insert_into_db(DATABASE_URL, next_id, request_url, created_at)
-                data = read_db(DATABASE_URL)
+                insert_data = {'id': next_id, 'url': current_url, 'created_at': created_at}
+                insert_into_db(DATABASE_URL, 'urls', insert_data)
+                data = read_db(DATABASE_URL, 'urls')
                 flash('Страница успешно добавлена')
                 return redirect(url_for('urls_id', id=next_id))
         else:
             flash("Некорректный URL")
             return redirect(url_for('index'))
     elif request.method == 'GET':
-        data = read_db(DATABASE_URL, order='DESC')
+        data = read_db(DATABASE_URL, 'urls')
         return render_template('urls.html', title='Анализатор страниц', data=data)
+
+
+@app.post('/urls/<id>/checks')
+def check(id):
+    # ЧИТАЕМ ПОСЛЕДНИЙ ID И ПРИСВАИВАЕМ СЛЕДУЮЩЕМУ НА ЕДИНИЦУ БОЛЬШЕ
+    data = read_db(DATABASE_URL, 'url_checks')
+    next_id = data[-1]['id'] + 1 if data else 1
+    created_at = str(date.today())
+    insert_data = {'id': next_id,
+                   'url_id': id,
+                   'status_code': int(),
+                   'h1': '',
+                   'description': '',
+                   'created_at': created_at}
+    insert_into_db(DATABASE_URL, 'url_checks', insert_data)
+    data = read_db(DATABASE_URL, 'url_checks')
+    return redirect(url_for('urls_id', id=id))
