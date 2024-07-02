@@ -37,6 +37,27 @@ def read_db(DATABASE_URL, table_name, order='ASC'):
         conn.close()
 
 
+def join_dbs(DATABASE_URL, table1, table2):
+    try:
+        conn = psycopg2.connect(DATABASE_URL)
+        with conn.cursor(cursor_factory=DictCursor) as cursor:
+            cursor.execute(f"""SELECT {table1}.id AS id, {table1}.url AS url, url_checks.created_at AS created_at
+                             FROM {table1}
+                             LEFT JOIN (SELECT url_id, MAX(created_at) AS created_at
+                                        FROM {table2}
+                                        GROUP BY url_id) AS url_checks
+                             ON {table1}.id = url_checks.url_id
+                             ORDER BY {table1}.id DESC;""")
+            records = cursor.fetchall()
+            records = [dict(record) for record in records]
+            print(records)
+        return records
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        conn.close()
+
+
 class DataBase:
 
     def __init__(self, DATABASE_URL):
@@ -45,8 +66,11 @@ class DataBase:
     def connect(self):
         pass
 
-    def read(self, order='ASC'):
+    def read(self, table, order='ASC'):
         pass
 
-    def insert(self, id, current_url, created_at):
+    def join(self, table1, table2):
+        pass
+
+    def insert(self, values):
         pass

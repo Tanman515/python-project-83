@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for
 from dotenv import load_dotenv
 import os
 from datetime import date
-from page_analyzer.dbfunc import insert_into_db, read_db
+from page_analyzer.dbfunc import insert_into_db, read_db, join_dbs
 from validators.url import url as check_url
 from urllib.parse import urlparse
 
@@ -75,7 +75,7 @@ def urls():
             flash("Некорректный URL")
             return redirect(url_for('index'))
     elif request.method == 'GET':
-        data = read_db(DATABASE_URL, 'urls')
+        data = join_dbs(DATABASE_URL, 'urls', 'url_checks')
         return render_template('urls.html', title='Анализатор страниц', data=data)
 
 
@@ -92,5 +92,4 @@ def check(id):
                    'description': '',
                    'created_at': created_at}
     insert_into_db(DATABASE_URL, 'url_checks', insert_data)
-    data = read_db(DATABASE_URL, 'url_checks')
     return redirect(url_for('urls_id', id=id))
