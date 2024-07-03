@@ -22,7 +22,9 @@
                 {{ site.url }}
                 </a>
               </td>
-              <td>{{ site.created_at }}</td>
+              {% if site.created_at %}
+                  <td>{{ site.created_at }}</td>
+              {% endif %}
               <td></td>
             </tr>
             {% endfor %}

@@ -1,17 +1,17 @@
 import psycopg2
-from psycopg2.extras import DictCursor
+from psycopg2.extras import NamedTupleCursor, DictCursor
 from psycopg2.extensions import AsIs
 
 
 def insert_into_db(DATABASE_URL, table_name, insert_data):
     try:
         conn = psycopg2.connect(DATABASE_URL)
-        conn.autocommit = True
         with conn.cursor() as cursor:
             columns = insert_data.keys()
             values = [insert_data[column] for column in columns]
             insert_statement = f'INSERT INTO {table_name} (%s) VALUES %s'
             cursor.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
+            conn.commit()
     except Exception as error:
         print('[INFO] Can`t establish connection to database')
         print(error)
@@ -20,57 +20,69 @@ def insert_into_db(DATABASE_URL, table_name, insert_data):
         print('[INFO] Connection closed')
 
 
-def read_db(DATABASE_URL, table_name, order='ASC'):
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        with conn.cursor(cursor_factory=DictCursor) as cursor:
-            if order == 'ASC':
-                cursor.execute(f"SELECT * FROM {table_name};")
-            elif order == 'DESC':
-                cursor.execute(f"SELECT * FROM {table_name} ORDER BY id DESC;")
-            records = cursor.fetchall()
-            records = [dict(record) for record in records]
-        return records
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        conn.close()
-
-
-def join_dbs(DATABASE_URL, table1, table2):
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        with conn.cursor(cursor_factory=DictCursor) as cursor:
-            cursor.execute(f"""SELECT {table1}.id AS id, {table1}.url AS url, url_checks.created_at AS created_at
-                             FROM {table1}
-                             LEFT JOIN (SELECT url_id, MAX(created_at) AS created_at
-                                        FROM {table2}
-                                        GROUP BY url_id) AS url_checks
-                             ON {table1}.id = url_checks.url_id
-                             ORDER BY {table1}.id DESC;""")
-            records = cursor.fetchall()
-            records = [dict(record) for record in records]
-            print(records)
-        return records
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        conn.close()
-
-
 class DataBase:
 
     def __init__(self, DATABASE_URL):
         self.DATABASE_URL = DATABASE_URL
 
-    def connect(self):
-        pass
+    def _connect(self):
+        return psycopg2.connect(self.DATABASE_URL)
 
-    def read(self, table, order='ASC'):
-        pass
+    def read_all_data(self, dbname):
+         with self._connect() as connection:
+            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+                cursor.execute(f'SELECT * FROM {dbname}')
+                NamedTuples = cursor.fetchall()
+                print(f'[INFO] Data from db "{dbname}" was selected by "read_all_data" function')
+                if NamedTuples:
+                    return [NamedTuple._asdict() for NamedTuple in NamedTuples]
+                else:
+                    return []
 
-    def join(self, table1, table2):
-        pass
+    def insert(self, name, data):
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                columns = data.keys()
+                values = [data[column] for column in columns]
+                insert_statement = f'INSERT INTO {name} (%s) VALUES %s'
+                cursor.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
+                connection.commit()
 
-    def insert(self, values):
-        pass
+    def get_record_by_url_id(self, dbname, url_id):
+        with self._connect() as connection:
+            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+                cursor.execute(f'SELECT * FROM {dbname} WHERE id = %s', (url_id))
+                NamedTuple = cursor.fetchone()
+                print(f'[INFO] Data from db "{dbname}" was selected by "get_record_by_url" function')
+                if NamedTuple:
+                    return NamedTuple._asdict()
+                else:
+                    return {}
+
+    def get_checks_by_url_id(self, dbname, url_id):
+        with self._connect() as connection:
+            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+                cursor.execute(f'SELECT * FROM {dbname} WHERE url_id = %s', (url_id))
+                NamedTuples = cursor.fetchall()
+                print(f'[INFO] Data from db "{dbname}" was selected by "get_checks_by_url" function')
+                if NamedTuples:
+                    return [NamedTuple._asdict() for NamedTuple in NamedTuples]
+                else:
+                    return []
+
+    def join_url_checks(self, dbname1, dbname2):
+        with self._connect() as connection:
+            with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
+                cursor.execute(f"""SELECT {dbname1}.id AS id, {dbname1}.url AS url, url_checks.created_at AS created_at
+                             FROM {dbname1}
+                             LEFT JOIN (SELECT url_id, MAX(created_at) AS created_at
+                                        FROM {dbname2}
+                                        GROUP BY url_id) AS url_checks
+                             ON {dbname1}.id = url_checks.url_id
+                             ORDER BY {dbname1}.id DESC;""")
+                NamedTuples = cursor.fetchall()
+                print(f'[INFO] Join data was finished')
+                if NamedTuples:
+                    return [NamedTuple._asdict() for NamedTuple in NamedTuples]
+                else:
+                    return []

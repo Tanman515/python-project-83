@@ -2,9 +2,10 @@ from flask import Flask, render_template, request, flash, redirect, url_for
 from dotenv import load_dotenv
 import os
 from datetime import date
-from page_analyzer.dbfunc import insert_into_db, read_db, join_dbs
+from page_analyzer.dbfunc import DataBase
 from validators.url import url as check_url
 from urllib.parse import urlparse
+import requests
 
 
 load_dotenv()
@@ -30,17 +31,18 @@ def urls_id(id):
     # ЕСЛИ ЕСТЬ ОТПРАВЛЯЕМ HTML
     # В ПРОТИВНОМ СЛУЧАЕ ОШИБКУ 404
 
-    data = read_db(DATABASE_URL, 'urls')
-    record = [line for line in data if line['id'] == int(id)]
+    db = DataBase(DATABASE_URL)
+    record = db.get_record_by_url_id('urls', id)
+
     # ЕСЛИ ЗАПИСЬ СУЩЕСТВУЕТ ТО
     # ПЕРЕДАЁМ ДАННЫЕ И ВОЗВРАЩАЕМ ШАБЛОН
+
     if record:
 
-        # ПРОВЕРЯЕМ ЕСТЬ ЛИ ЗАПИСИ О ПРОВЕРКАХ
-        data = read_db(DATABASE_URL, 'url_checks')
-        checks = [{key: value for key, value in check.items()} for check in data if check['url_id'] == record[0]['id']]
+        # Находим имеющиеся проверки по конкретному id
+        checks = db.get_checks_by_url_id('url_checks', id)
 
-        return render_template('urls_id.html', record=record[0], checks=checks)
+        return render_template('urls_id.html', record=record, checks=checks)
 
     # В ПРОТИВНОМ СЛУЧАЕ ВОЗВАРАЩАЕМ ОШИБКУ 404 И PAGE_NOT_FOUND
     else:
@@ -49,40 +51,44 @@ def urls_id(id):
 
 @app.route("/urls", methods=['GET', 'POST'])
 def urls():
+    db = DataBase(DATABASE_URL)
     if request.method == 'POST':
         request_url = request.form['url']
         # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА ВАЛИДНОСТЬ URL
         if check_url(request_url):
-            data = read_db(DATABASE_URL, 'urls')
+            data = db.read_all_data('urls')
             parsed_url = urlparse(request_url)
             current_url = f'{parsed_url.scheme}://{parsed_url.hostname}'
             urls = [f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' for record in data]
             # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА НАЛИЧИЕ ДАННЫХ В БД
             if current_url in urls:
                 flash('Страница уже существует')
-                id = [record['id'] for record in data if f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' == current_url] # noqa E501
-                return redirect(url_for('urls_id', id=id[0]))
+                for record in data:
+                    if f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' == current_url:
+                        id = record['id']
+                return redirect(url_for('urls_id', id=id))
             else:
                 # ДОБАВЛЕНИЕ СТРАНИЦЫ В БД, ПЕРЕНАПРАВЛЕНИЕ НА ПУТЬ URLS/<ID>
                 created_at = str(date.today())
                 next_id = data[-1]['id'] + 1 if data else 1
                 insert_data = {'id': next_id, 'url': current_url, 'created_at': created_at}
-                insert_into_db(DATABASE_URL, 'urls', insert_data)
-                data = read_db(DATABASE_URL, 'urls')
+                db.insert('urls', insert_data)
+                data = db.read_all_data('urls')
                 flash('Страница успешно добавлена')
                 return redirect(url_for('urls_id', id=next_id))
         else:
             flash("Некорректный URL")
             return redirect(url_for('index'))
     elif request.method == 'GET':
-        data = join_dbs(DATABASE_URL, 'urls', 'url_checks')
+        data = db.join_url_checks('urls', 'url_checks')
         return render_template('urls.html', title='Анализатор страниц', data=data)
 
 
 @app.post('/urls/<id>/checks')
 def check(id):
     # ЧИТАЕМ ПОСЛЕДНИЙ ID И ПРИСВАИВАЕМ СЛЕДУЮЩЕМУ НА ЕДИНИЦУ БОЛЬШЕ
-    data = read_db(DATABASE_URL, 'url_checks')
+    db = DataBase(DATABASE_URL)
+    data = db.read_all_data('url_checks')
     next_id = data[-1]['id'] + 1 if data else 1
     created_at = str(date.today())
     insert_data = {'id': next_id,
@@ -91,5 +97,9 @@ def check(id):
                    'h1': '',
                    'description': '',
                    'created_at': created_at}
-    insert_into_db(DATABASE_URL, 'url_checks', insert_data)
+    try:
+        # ОПРЕДЕЛЯЕМ URL САЙТА
+        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'}
+    except Exception as _ex:
+        print(_ex)
     return redirect(url_for('urls_id', id=id))
