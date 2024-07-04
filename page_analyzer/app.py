@@ -63,15 +63,17 @@ def urls():
             # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА НАЛИЧИЕ ДАННЫХ В БД
             if current_url in urls:
                 flash('Страница уже существует')
-                for record in data:
-                    if f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' == current_url:
-                        id = record['id']
+                id_generator = (
+                    record['id']
+                    for record in data
+                    if f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' == current_url
+                )
+                id = next(id_generator, None)
                 return redirect(url_for('urls_id', id=id))
             else:
-                # ДОБАВЛЕНИЕ СТРАНИЦЫ В БД, ПЕРЕНАПРАВЛЕНИЕ НА ПУТЬ URLS/<ID>
-                created_at = str(date.today())
+                # ДОБАВЛЕНИЕ СТРАНИЦЫ В БД, ПЕРЕНАПРАВЛЕНИЕ НА ПУТЬ URLS/<ID>)
                 next_id = data[-1]['id'] + 1 if data else 1
-                insert_data = {'id': next_id, 'url': current_url, 'created_at': created_at}
+                insert_data = {'id': next_id, 'url': current_url, 'created_at': str(date.today())}
                 db.insert('urls', insert_data)
                 data = db.read_all_data('urls')
                 flash('Страница успешно добавлена')
@@ -90,16 +92,20 @@ def check(id):
     db = DataBase(DATABASE_URL)
     data = db.read_all_data('url_checks')
     next_id = data[-1]['id'] + 1 if data else 1
-    created_at = str(date.today())
-    insert_data = {'id': next_id,
-                   'url_id': id,
-                   'status_code': int(),
-                   'h1': '',
-                   'description': '',
-                   'created_at': created_at}
+    url = db.get_record_by_url_id('urls', id)['url']
     try:
         # ОПРЕДЕЛЯЕМ URL САЙТА
-        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'}
+        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'} # noqa E501
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
     except Exception as _ex:
         print(_ex)
+    else:
+        insert_data = {'id': next_id,
+                       'url_id': id,
+                       'status_code': response.status_code,
+                       'h1': '',
+                       'description': '',
+                       'created_at': str(date.today())}
+        db.insert('url_checks', insert_data)
     return redirect(url_for('urls_id', id=id))

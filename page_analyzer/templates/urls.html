@@ -22,10 +22,8 @@
                 {{ site.url }}
                 </a>
               </td>
-              {% if site.created_at %}
-                  <td>{{ site.created_at }}</td>
-              {% endif %}
-              <td></td>
+              <td>{{ site.created_at | default('', true)}}</td>
+              <td>{{ site.status_code | default('', true)}}</td>
             </tr>
             {% endfor %}
           </tbody>
