@@ -1,5 +1,6 @@
 ### Hexlet tests and linter status:
 [![Actions Status](https://github.com/Tanman515/python-project-83/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/Tanman515/python-project-83/actions)
 [![Actions Status](https://github.com/Tanman515/python-project-83/actions/workflows/my_check.yml/badge.svg)](https://github.com/Tanman515/python-project-83/actions)
+[![Maintainability](https://api.codeclimate.com/v1/badges/33231938719485a7c0e0/maintainability)](https://codeclimate.com/github/Tanman515/python-project-83/maintainability)
 
 **Ссылка на сайт** : [Анализатор страниц](https://python-project-83-2kaf.onrender.com)
