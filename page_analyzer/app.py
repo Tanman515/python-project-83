@@ -93,14 +93,16 @@ def check(id):
     db = DataBase(DATABASE_URL)
     data = db.read_all_data('url_checks')
     next_id = data[-1]['id'] + 1 if data else 1
-    url = db.get_record_by_url_id('urls', id)['url']
+    record = db.get_record_by_url_id('urls', id)
     try:
         # ОПРЕДЕЛЯЕМ URL САЙТА
         headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'} # noqa E501
-        response = requests.get(url, headers=headers)
+        response = requests.get(record['url'], headers=headers)
         response.raise_for_status()
     except Exception as _ex:
-        print(_ex)
+        flash('Произошла ошибка при проверке')
+        checks = db.get_checks_by_url_id('url_checks', id)
+        return render_template('urls_id.html', record=record, checks=checks)
     else:
         soup = BeautifulSoup(response.text, 'lxml')
         h1 = soup.find('h1')
