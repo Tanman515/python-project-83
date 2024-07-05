@@ -80,7 +80,7 @@ def urls():
                 flash('Страница успешно добавлена')
                 return redirect(url_for('urls_id', id=next_id))
         else:
-            flash("Произошла ошибка при проверке")
+            flash("Некорректный URL")
             return render_template('index.html'), 422
     elif request.method == 'GET':
         data = db.join_url_checks('urls', 'url_checks')
