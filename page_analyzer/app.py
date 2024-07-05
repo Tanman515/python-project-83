@@ -81,7 +81,7 @@ def urls():
                 return redirect(url_for('urls_id', id=next_id))
         else:
             flash("Некорректный URL")
-            return redirect(url_for('index')), 422
+            return render_template('index.html'), 422
     elif request.method == 'GET':
         data = db.join_url_checks('urls', 'url_checks')
         return render_template('urls.html', data=data)
