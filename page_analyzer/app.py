@@ -104,6 +104,7 @@ def check(id):
         checks = db.get_checks_by_url_id('url_checks', id)
         return render_template('urls_id.html', record=record, checks=checks)
     else:
+        flash('Страница успешно проверена')
         soup = BeautifulSoup(response.text, 'lxml')
         h1 = soup.find('h1')
         title = soup.find('title')
