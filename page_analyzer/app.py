@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, flash, redirect, url_for
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import os
 from datetime import date
@@ -83,7 +84,7 @@ def urls():
             return redirect(url_for('index'))
     elif request.method == 'GET':
         data = db.join_url_checks('urls', 'url_checks')
-        return render_template('urls.html', title='Анализатор страниц', data=data)
+        return render_template('urls.html', data=data)
 
 
 @app.post('/urls/<id>/checks')
@@ -101,11 +102,16 @@ def check(id):
     except Exception as _ex:
         print(_ex)
     else:
+        soup = BeautifulSoup(response.text, 'lxml')
+        h1 = soup.find('h1')
+        title = soup.find('title')
+        content = soup.find('meta', attrs={'name': 'description'})
         insert_data = {'id': next_id,
                        'url_id': id,
                        'status_code': response.status_code,
-                       'h1': '',
-                       'description': '',
+                       'h1': h1.get_text() if h1 else '',
+                       'title': title.get_text() if title else '',
+                       'description': content['content'] if content else '',
                        'created_at': str(date.today())}
         db.insert('url_checks', insert_data)
     return redirect(url_for('urls_id', id=id))

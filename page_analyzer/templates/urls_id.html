@@ -1,4 +1,12 @@
-{% extends "base.html" %}
+{% extends "layouts/base.html" %}
+{% block styles %}
+  <style>
+  .table tbody th,
+  .table tbody td {
+      font-weight: normal;
+  }
+  </style>
+{% endblock %}
 {% block content %}
 {% for msg in get_flashed_messages() %}
 {% if msg == 'Страница уже существует' %}

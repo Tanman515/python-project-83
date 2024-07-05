@@ -10,9 +10,11 @@ def insert_into_db(DATABASE_URL, table_name, insert_data):
             columns = insert_data.keys()
             values = [insert_data[column] for column in columns]
             insert_statement = f'INSERT INTO {table_name} (%s) VALUES %s'
+            cursor.execute('BEGIN;')
             cursor.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
             conn.commit()
     except Exception as error:
+        conn.rollback()
         print('[INFO] Can`t establish connection to database')
         print(error)
     finally:
@@ -63,7 +65,7 @@ class DataBase:
     def get_checks_by_url_id(self, dbname, url_id):
         with self._connect() as connection:
             with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-                cursor.execute(f'SELECT * FROM {dbname} WHERE url_id = %s', (url_id))
+                cursor.execute(f'SELECT * FROM {dbname} WHERE url_id = %s ORDER BY id DESC', (url_id))
                 NamedTuples = cursor.fetchall()
                 print(f'[INFO] Data from db "{dbname}" was selected by "get_checks_by_url" function')
                 if NamedTuples:
