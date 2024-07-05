@@ -11,6 +11,7 @@ CREATE TABLE url_checks (
   url_id INT,
   status_code INT,
   h1 VARCHAR(255),
+  title VARCHAR(255),
   description TEXT,
   created_at DATE
 );
