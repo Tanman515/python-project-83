@@ -63,7 +63,7 @@ def urls():
             urls = [f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' for record in data]
             # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА НАЛИЧИЕ ДАННЫХ В БД
             if current_url in urls:
-                flash('Страница уже существует')
+                flash('Страница уже существует', 'info')
                 id_generator = (
                     record['id']
                     for record in data
@@ -77,10 +77,10 @@ def urls():
                 insert_data = {'id': next_id, 'url': current_url, 'created_at': str(date.today())}
                 db.insert('urls', insert_data)
                 data = db.read_all_data('urls')
-                flash('Страница успешно добавлена')
+                flash('Страница успешно добавлена', 'success')
                 return redirect(url_for('urls_id', id=next_id))
         else:
-            flash("Некорректный URL")
+            flash("Некорректный URL", 'danger')
             return render_template('index.html'), 422
     elif request.method == 'GET':
         data = db.join_url_checks('urls', 'url_checks')
@@ -101,11 +101,11 @@ def check(id):
         print(f'[INFO] Got response from {record["url"]}')
         response.raise_for_status()
     except Exception:
-        flash('Произошла ошибка при проверке')
+        flash('Произошла ошибка при проверке', 'danger')
         checks = db.get_checks_by_url_id('url_checks', id)
         return render_template('urls_id.html', record=record, checks=checks)
     else:
-        flash('Страница успешно проверена')
+        flash('Страница успешно проверена', 'success')
         soup = BeautifulSoup(response.text, 'lxml')
         h1 = soup.find('h1')
         next_id = data[-1]['id'] + 1 if data else 1

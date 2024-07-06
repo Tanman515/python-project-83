@@ -1,17 +1,9 @@
 {% extends "layouts/base.html" %}
 
 {% block content %}
-{% for msg in get_flashed_messages() %}
-{% if msg == 'Страница уже существует' %}
-    <div class="alert alert-info" role="alert">{{ msg }}</div>
-{% elif msg == 'Страница успешно добавлена'%}
-    <div class="alert alert-success" role="alert">{{ msg }}</div>
-{% elif msg == 'Страница успешно проверена'%}
-    <div class="alert alert-success" role="alert">{{ msg }}</div>
-{% elif msg == 'Произошла ошибка при проверке' %}
-    <div class="alert alert-danger" role="alert">{{ msg }}</div>
-{% endif %}
-{% endfor %}
+
+{% include 'includes/alert.html' %}
+
   <main class="flex-grow-1">
     <div class="container-lg mt-3">
       <h1>Сайт: {{ record.url }}</h1>
@@ -37,7 +29,7 @@
   </div>
 
     <h2 class="mt-5 mb-3">Проверки</h2>
-    <form method="post" action="/urls/{{ record.id }}/checks">
+    <form method="post" action={{ url_for('check', id=record.id) }}>
     <input type="submit" class="btn btn-primary" value="Запустить проверку">
     </form>
     
