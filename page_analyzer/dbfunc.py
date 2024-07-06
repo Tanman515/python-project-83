@@ -3,25 +3,6 @@ from psycopg2.extras import NamedTupleCursor
 from psycopg2.extensions import AsIs
 
 
-def insert_into_db(DATABASE_URL, table_name, insert_data):
-    try:
-        conn = psycopg2.connect(DATABASE_URL)
-        with conn.cursor() as cursor:
-            columns = insert_data.keys()
-            values = [insert_data[column] for column in columns]
-            insert_statement = f'INSERT INTO {table_name} %s VALUES %s'
-            cursor.execute('BEGIN;')
-            cursor.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
-            conn.commit()
-    except Exception as error:
-        conn.rollback()
-        print('[INFO] Can`t establish connection to database')
-        print(error)
-    finally:
-        conn.close()
-        print('[INFO] Connection closed')
-
-
 class DataBase:
 
     def __init__(self, DATABASE_URL):

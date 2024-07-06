@@ -13,6 +13,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
+db = DataBase(DATABASE_URL)
 
 
 @app.errorhandler(404)
@@ -32,7 +33,6 @@ def urls_id(id):
     # ЕСЛИ ЕСТЬ ОТПРАВЛЯЕМ HTML
     # В ПРОТИВНОМ СЛУЧАЕ ОШИБКУ 404
 
-    db = DataBase(DATABASE_URL)
     record = db.get_record_by_url_id('urls', id)
 
     # ЕСЛИ ЗАПИСЬ СУЩЕСТВУЕТ ТО
@@ -52,14 +52,12 @@ def urls_id(id):
 
 @app.get('/urls')
 def get_urls():
-    db = DataBase(DATABASE_URL)
     data = db.join_url_checks('urls', 'url_checks')
     return render_template('urls.html', data=data)
 
 
 @app.post('/urls')
 def post_urls():
-    db = DataBase(DATABASE_URL)
     request_url = request.form['url']
     # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА ВАЛИДНОСТЬ URL
     if check_url(request_url):
@@ -93,7 +91,6 @@ def post_urls():
 @app.post('/urls/<id>/checks')
 def check(id):
     # ЧИТАЕМ ПОСЛЕДНИЙ ID И ПРИСВАИВАЕМ СЛЕДУЮЩЕМУ НА ЕДИНИЦУ БОЛЬШЕ
-    db = DataBase(DATABASE_URL)
     data = db.read_all_data('url_checks')
     record = db.get_record_by_url_id('urls', id)
     try:
