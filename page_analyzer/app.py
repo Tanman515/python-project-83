@@ -92,14 +92,15 @@ def check(id):
     # ЧИТАЕМ ПОСЛЕДНИЙ ID И ПРИСВАИВАЕМ СЛЕДУЮЩЕМУ НА ЕДИНИЦУ БОЛЬШЕ
     db = DataBase(DATABASE_URL)
     data = db.read_all_data('url_checks')
-    next_id = data[-1]['id'] + 1 if data else 1
     record = db.get_record_by_url_id('urls', id)
     try:
         # ОПРЕДЕЛЯЕМ URL САЙТА
         headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'} # noqa E501
+        print(f'[INFO] Waiting response from {record["url"]}')
         response = requests.get(record['url'], headers=headers)
+        print(f'[INFO] Got response from {record["url"]}')
         response.raise_for_status()
-    except Exception as _ex:
+    except Exception:
         flash('Произошла ошибка при проверке')
         checks = db.get_checks_by_url_id('url_checks', id)
         return render_template('urls_id.html', record=record, checks=checks)
@@ -107,6 +108,7 @@ def check(id):
         flash('Страница успешно проверена')
         soup = BeautifulSoup(response.text, 'lxml')
         h1 = soup.find('h1')
+        next_id = data[-1]['id'] + 1 if data else 1
         title = soup.find('title')
         content = soup.find('meta', attrs={'name': 'description'})
         insert_data = {'id': next_id,
