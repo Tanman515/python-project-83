@@ -1,12 +1,5 @@
 {% extends "layouts/base.html" %}
-{% block styles %}
-  <style>
-  .table tbody th,
-  .table tbody td {
-      font-weight: normal;
-  }
-  </style>
-{% endblock %}
+
 {% block content %}
 {% for msg in get_flashed_messages() %}
 {% if msg == 'Страница уже существует' %}
@@ -63,12 +56,12 @@
     <tbody>
     {% for check in checks %}
       <tr>
-        <th>{{ check.id }}</th>
-        <th>{{ check.status_code }}</th>
-        <th>{{ check.h1 }}</th>
-        <th>{{ check.title }}</th>
-        <th>{{ check.description }}</th>
-        <th>{{ check.created_at }}</th>
+        <td>{{ check.id }}</td>
+        <td>{{ check.status_code }}</td>
+        <td>{{ check.h1 }}</td>
+        <td>{{ check.title }}</td>
+        <td>{{ check.description }}</td>
+        <td>{{ check.created_at }}</td>
       </tr>
     {% endfor %}
     </tbody>
