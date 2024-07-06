@@ -54,7 +54,8 @@ class DataBase:
     def get_record_by_url_id(self, dbname, url_id):
         with self._connect() as connection:
             with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-                cursor.execute(f'SELECT * FROM {dbname} WHERE id = %s', (url_id))
+                query = f'SELECT * FROM {dbname} WHERE id = %s'
+                cursor.execute(query, (url_id,))
                 NamedTuple = cursor.fetchone()
                 print(f'[INFO] Data from db "{dbname}" was selected by "get_record_by_url" function')
                 if NamedTuple:
@@ -65,7 +66,8 @@ class DataBase:
     def get_checks_by_url_id(self, dbname, url_id):
         with self._connect() as connection:
             with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
-                cursor.execute(f'SELECT * FROM {dbname} WHERE url_id = %s ORDER BY id DESC', (url_id))
+                query = f'SELECT * FROM {dbname} WHERE url_id = %s ORDER BY id DESC'
+                cursor.execute(query, (url_id,))
                 NamedTuples = cursor.fetchall()
                 print(f'[INFO] Data from db "{dbname}" was selected by "get_checks_by_url" function')
                 if NamedTuples:
