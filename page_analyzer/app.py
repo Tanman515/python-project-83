@@ -50,41 +50,44 @@ def urls_id(id):
         return render_template('page404.html'), 404
 
 
-@app.route("/urls", methods=['GET', 'POST'])
-def urls():
+@app.get('/urls')
+def get_urls():
     db = DataBase(DATABASE_URL)
-    if request.method == 'POST':
-        request_url = request.form['url']
-        # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА ВАЛИДНОСТЬ URL
-        if check_url(request_url):
-            data = db.read_all_data('urls')
-            parsed_url = urlparse(request_url)
-            current_url = f'{parsed_url.scheme}://{parsed_url.hostname}'
-            urls = [f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' for record in data]
-            # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА НАЛИЧИЕ ДАННЫХ В БД
-            if current_url in urls:
-                flash('Страница уже существует', 'info')
-                id_generator = (
-                    record['id']
-                    for record in data
-                    if f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' == current_url
-                )
-                id = next(id_generator, None)
-                return redirect(url_for('urls_id', id=id))
-            else:
-                # ДОБАВЛЕНИЕ СТРАНИЦЫ В БД, ПЕРЕНАПРАВЛЕНИЕ НА ПУТЬ URLS/<ID>)
-                next_id = data[-1]['id'] + 1 if data else 1
-                insert_data = {'id': next_id, 'url': current_url, 'created_at': str(date.today())}
-                db.insert('urls', insert_data)
-                data = db.read_all_data('urls')
-                flash('Страница успешно добавлена', 'success')
-                return redirect(url_for('urls_id', id=next_id))
+    data = db.join_url_checks('urls', 'url_checks')
+    return render_template('urls.html', data=data)
+
+
+@app.post('/urls')
+def post_urls():
+    db = DataBase(DATABASE_URL)
+    request_url = request.form['url']
+    # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА ВАЛИДНОСТЬ URL
+    if check_url(request_url):
+        data = db.read_all_data('urls')
+        parsed_url = urlparse(request_url)
+        current_url = f'{parsed_url.scheme}://{parsed_url.hostname}'
+        urls = [f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' for record in data]
+        # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА НАЛИЧИЕ ДАННЫХ В БД
+        if current_url in urls:
+            flash('Страница уже существует', 'info')
+            id_generator = (
+                record['id']
+                for record in data
+                if f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' == current_url
+            )
+            id = next(id_generator, None)
+            return redirect(url_for('urls_id', id=id))
         else:
-            flash("Некорректный URL", 'danger')
-            return render_template('index.html'), 422
-    elif request.method == 'GET':
-        data = db.join_url_checks('urls', 'url_checks')
-        return render_template('urls.html', data=data)
+            # ДОБАВЛЕНИЕ СТРАНИЦЫ В БД, ПЕРЕНАПРАВЛЕНИЕ НА ПУТЬ URLS/<ID>)
+            next_id = data[-1]['id'] + 1 if data else 1
+            insert_data = {'id': next_id, 'url': current_url, 'created_at': str(date.today())}
+            db.insert('urls', insert_data)
+            data = db.read_all_data('urls')
+            flash('Страница успешно добавлена', 'success')
+            return redirect(url_for('urls_id', id=next_id))
+    else:
+        flash("Некорректный URL", 'danger')
+        return render_template('index.html'), 422
 
 
 @app.post('/urls/<id>/checks')
