@@ -5,6 +5,15 @@ from psycopg2.extensions import AsIs
 
 class DataBase:
 
+    """
+    This class uses psycopg2 for formation and execution sql query.
+
+    It can be used for insert, read or join data in special cases.
+
+    If you want to use this class, you dont need to connect to db.
+    This class will do it for you.
+    """
+
     def __init__(self, DATABASE_URL):
         self.DATABASE_URL = DATABASE_URL
 
