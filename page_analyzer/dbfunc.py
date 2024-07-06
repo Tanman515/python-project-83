@@ -9,7 +9,7 @@ def insert_into_db(DATABASE_URL, table_name, insert_data):
         with conn.cursor() as cursor:
             columns = insert_data.keys()
             values = [insert_data[column] for column in columns]
-            insert_statement = f'INSERT INTO {table_name} (%s) VALUES %s'
+            insert_statement = f'INSERT INTO {table_name} %s VALUES %s'
             cursor.execute('BEGIN;')
             cursor.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
             conn.commit()
