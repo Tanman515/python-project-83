@@ -21,6 +21,7 @@ class DataBase:
         return psycopg2.connect(self.DATABASE_URL)
 
     def read_all_data(self, dbname):
+        NamedTuples = None
         with self._connect() as connection:
             with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
                 cursor.execute(f'SELECT * FROM {dbname}')
@@ -47,6 +48,7 @@ class DataBase:
         print(f'[INFO] Connection was closed "{dbname}"')
 
     def get_record_by_url_id(self, dbname, url_id):
+        NamedTuple = None
         with self._connect() as connection:
             with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
                 query = f'SELECT * FROM {dbname} WHERE id = %s'
@@ -62,6 +64,7 @@ class DataBase:
             return {}
 
     def get_checks_by_url_id(self, dbname, url_id):
+        NamedTuples = None
         with self._connect() as connection:
             with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
                 query = f'SELECT * FROM {dbname} WHERE url_id = %s ORDER BY id DESC'
@@ -77,6 +80,7 @@ class DataBase:
             return []
 
     def join_url_checks(self, dbname1, dbname2):
+        NamedTuples = None
         with self._connect() as connection:
             with connection.cursor(cursor_factory=NamedTupleCursor) as cursor:
                 cursor.execute(f"""SELECT {dbname1}.id AS id,
