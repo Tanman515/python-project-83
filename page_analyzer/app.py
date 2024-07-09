@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import os
 from datetime import date
-from page_analyzer.dbfunc import DataBase
+from page_analyzer.db import DataBase
 from validators.url import url as check_url
 from urllib.parse import urlparse
 import requests
@@ -28,24 +28,10 @@ def index():
 
 @app.route("/urls/<id>")
 def urls_id(id):
-
-    # ПРОВЕРЯЕМ ЕСТЬ ЛИ УКАЗАННЫЙ ID В БД
-    # ЕСЛИ ЕСТЬ ОТПРАВЛЯЕМ HTML
-    # В ПРОТИВНОМ СЛУЧАЕ ОШИБКУ 404
-
     record = db.get_record_by_url_id('urls', id)
-
-    # ЕСЛИ ЗАПИСЬ СУЩЕСТВУЕТ ТО
-    # ПЕРЕДАЁМ ДАННЫЕ И ВОЗВРАЩАЕМ ШАБЛОН
-
     if record:
-
-        # Находим имеющиеся проверки по конкретному id
         checks = db.get_checks_by_url_id('url_checks', id)
-
         return render_template('urls_id.html', record=record, checks=checks)
-
-    # В ПРОТИВНОМ СЛУЧАЕ ВОЗВАРАЩАЕМ ОШИБКУ 404 И PAGE_NOT_FOUND
     else:
         return render_template('page404.html'), 404
 
@@ -59,17 +45,11 @@ def get_urls():
 @app.post('/urls')
 def post_urls():
     request_url = request.form['url']
-
-    # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА ВАЛИДНОСТЬ URL
-
     if check_url(request_url):
         data = db.read_all_data('urls')
         parsed_url = urlparse(request_url)
         current_url = f'{parsed_url.scheme}://{parsed_url.hostname}'
         urls = [f'{urlparse(record["url"]).scheme}://{urlparse(record["url"]).hostname}' for record in data]
-
-        # ВЫПОЛНЯЕТСЯ ПРОВЕРКА НА НАЛИЧИЕ ДАННЫХ В БД
-
         if current_url in urls:
             flash('Страница уже существует', 'info')
             id_generator = (
@@ -80,9 +60,6 @@ def post_urls():
             id = next(id_generator, None)
             return redirect(url_for('urls_id', id=id))
         else:
-
-            # ДОБАВЛЕНИЕ СТРАНИЦЫ В БД, ПЕРЕНАПРАВЛЕНИЕ НА ПУТЬ URLS/<ID>
-
             next_id = data[-1]['id'] + 1 if data else 1
             insert_data = {'id': next_id, 'url': current_url, 'created_at': str(date.today())}
             db.insert('urls', insert_data)
@@ -96,31 +73,19 @@ def post_urls():
 
 @app.post('/urls/<id>/checks')
 def check(id):
-
-    # Читаем данные из БД проверок и запись из общей БД
-
     data = db.read_all_data('url_checks')
     record = db.get_record_by_url_id('urls', id)
     try:
         headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0'} # noqa E501
         print(f'[INFO] Waiting response from {record["url"]}')
-
-        # Выполняем запрос к сайту для проверки данных
-
         response = requests.get(record['url'], headers=headers)
         print(f'[INFO] Got response from {record["url"]}')
         response.raise_for_status()
     except Exception:
-
-        # Если произошла ошибка 4хх или 5хх данные не записываем и выводим флэш
-
         flash('Произошла ошибка при проверке', 'danger')
         checks = db.get_checks_by_url_id('url_checks', id)
         return render_template('urls_id.html', record=record, checks=checks)
     else:
-
-        # Собираем необходимые данные
-
         flash('Страница успешно проверена', 'success')
         soup = BeautifulSoup(response.text, 'lxml')
         h1 = soup.find('h1')
@@ -134,8 +99,5 @@ def check(id):
                        'title': title.get_text() if title else '',
                        'description': content['content'] if content else '',
                        'created_at': str(date.today())}
-
-        # Записываем данные в БД проверок
-
         db.insert('url_checks', insert_data)
     return redirect(url_for('urls_id', id=id))

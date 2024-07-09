@@ -26,20 +26,25 @@ class DataBase:
                 cursor.execute(f'SELECT * FROM {dbname}')
                 NamedTuples = cursor.fetchall()
                 print(f'[INFO] Data from db "{dbname}" was selected by "read_all_data" function')
-                if NamedTuples:
-                    return [NamedTuple._asdict() for NamedTuple in NamedTuples]
-                else:
-                    return []
+        connection.close()
+        print(f'[INFO] Connection was closed "{dbname}"')
 
-    def insert(self, name, data):
+        if NamedTuples:
+            return [NamedTuple._asdict() for NamedTuple in NamedTuples]
+        else:
+            return []
+
+    def insert(self, dbname, data):
         with self._connect() as connection:
             with connection.cursor() as cursor:
                 columns = data.keys()
                 values = [data[column] for column in columns]
-                insert_statement = f'INSERT INTO {name} (%s) VALUES %s'
+                insert_statement = f'INSERT INTO {dbname} (%s) VALUES %s'
                 cursor.execute(insert_statement, (AsIs(','.join(columns)), tuple(values)))
                 connection.commit()
                 print("[INFO] Data was saved by 'insert' function")
+        connection.close()
+        print(f'[INFO] Connection was closed "{dbname}"')
 
     def get_record_by_url_id(self, dbname, url_id):
         with self._connect() as connection:
@@ -48,10 +53,13 @@ class DataBase:
                 cursor.execute(query, (url_id,))
                 NamedTuple = cursor.fetchone()
                 print(f'[INFO] Data from db "{dbname}" was selected by "get_record_by_url" function')
-                if NamedTuple:
-                    return NamedTuple._asdict()
-                else:
-                    return {}
+        connection.close()
+        print(f'[INFO] Connection was closed "{dbname}"')
+
+        if NamedTuple:
+            return NamedTuple._asdict()
+        else:
+            return {}
 
     def get_checks_by_url_id(self, dbname, url_id):
         with self._connect() as connection:
@@ -60,10 +68,13 @@ class DataBase:
                 cursor.execute(query, (url_id,))
                 NamedTuples = cursor.fetchall()
                 print(f'[INFO] Data from db "{dbname}" was selected by "get_checks_by_url" function')
-                if NamedTuples:
-                    return [NamedTuple._asdict() for NamedTuple in NamedTuples]
-                else:
-                    return []
+        connection.close()
+        print(f'[INFO] Connection was closed "{dbname}"')
+
+        if NamedTuples:
+            return [NamedTuple._asdict() for NamedTuple in NamedTuples]
+        else:
+            return []
 
     def join_url_checks(self, dbname1, dbname2):
         with self._connect() as connection:
@@ -82,7 +93,10 @@ class DataBase:
                              ORDER BY {dbname1}.id DESC;""")
                 NamedTuples = cursor.fetchall()
                 print('[INFO] Join data was finished')
-                if NamedTuples:
-                    return [NamedTuple._asdict() for NamedTuple in NamedTuples]
-                else:
-                    return []
+        connection.close()
+        print(f'[INFO] Connection was closed "{dbname1}" "{dbname2}"')
+
+        if NamedTuples:
+            return [NamedTuple._asdict() for NamedTuple in NamedTuples]
+        else:
+            return []
